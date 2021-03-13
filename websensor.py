@@ -1,3 +1,7 @@
+from aiohttp import web
+import socketio
+import os
+
 import smbus			#import SMBus module of I2C
 from time import sleep          #import
 import csv
@@ -19,31 +23,6 @@ GYRO_XOUT_H  = 0x43
 GYRO_YOUT_H  = 0x45
 GYRO_ZOUT_H  = 0x47
 TEMP_OUT_H   = 0x41
-Gxx = 0
-Gyy = 0
-Gzz = 0
-
-
-from flask import render_template, url_for, request
-from flask import Flask
-app = Flask(__name__)  
-@app.route('/')
-	
-	
-	
-def index():
-		
-	return render_template("sensor.html",GyroX=Gxx, GyroY=Gyy, GyroZ=Gzz )
-
-	
-	
-	
-
-if __name__ == "__main__":
-	app.run(debug=True)  
-
-
-
 
 def MPU_Init():
 	#write to sample rate register
@@ -104,10 +83,6 @@ def read_raw_data1(addr):
                 value1 = value1 - 65536
         return value1
 
-
-
-
-    
 bus = smbus.SMBus(1) 	# or bus = smbus.SMBus(0) for older version boards
 Device_Address = 0x68   # MPU6050 device address
 Device_Address1 = 0x69
@@ -115,6 +90,41 @@ Device_Address1 = 0x69
 MPU_Init()
 
 print (" Reading Data of Gyroscope and Accelerometer")
+
+
+
+# create a new aysnc socket io server
+socket_io = socketio.AsyncServer()
+
+#create a new Aiohttp web application
+web_app = web.Application()
+
+#bind the socket.io server to the web application instance
+socket_io.attach(web_app)
+
+#define endpoints 
+async def index(request):
+    dirname = os.path.dirname(__file__)
+    filename = os.path.join(dirname, 'index.html')
+    with open(filename) as file_obj:
+        return web.Response(text = file_obj.read(), content_type='text/html')
+
+
+@socket_io.on('message')
+async def print_message(id, message):
+    print("socket id is {}".format(id))
+    print(message)
+    #enabling two-way communication
+    await socket_io.emit('message', "you said {}".format(message))
+
+
+#bind the aiohttp endpoint to the web_application
+web_app.router.add_get('/',index)
+
+#start the server
+if __name__ == '__main__':
+    web.run_app(web_app)
+
 
 while True:
 	
@@ -179,5 +189,8 @@ while True:
 	 
 	print ("Gx=%.2f" %Gxx, "Gy=%.2f" %Gyy,  "Gz=%.2f" %Gzz, "Ax=%.2f g" %Axx, "Ay=%.2f g" %Ayy, "Az=%.2f g" %Azz)
 
+	
+	
+	
+	
 	sleep(1)
-
