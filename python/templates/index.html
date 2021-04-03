@@ -40,11 +40,11 @@
 
 <body>
     <div class="slider">
-        <input class="block" type="range" min="-35" max="35" value="0" name="steering" id="steering" />
+        <input class="block" type="range" min="60" max="120" value="90" name="steering" id="steering" />
         <span class="steering">0</span>
     </div>
     <div class="slider">
-        <input type="range" min="-35" max="35" value="0" name="throttle" id="throttle" />
+        <input type="range" min="0" max="100" value="0" name="throttle" id="throttle" />
         <span class="throttle">0</span>
     </div>
     <div class="container-fluid">
@@ -96,7 +96,7 @@
 
         steering.oninput = function() {
             var input = this.value;
-            $('.steering').text(input)
+            $('.steering').text(input-90)
 
             $.getJSON('/steering', {
                 steeringInput:input

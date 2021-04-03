@@ -6,11 +6,14 @@ from random import random
 from flask import Flask, render_template, make_response
 from mpu6050 import mpu6050
 import csv
+from RaspberryMotors.motors import servos
+import RPi.GPIO as GPIO
+
+servos.setMode(GPIO.BCM)
 
 app = Flask(__name__)
 
 mpu = mpu6050(0x68)
-
 
 @app.route('/', methods=["GET", "POST"])
 def main():
@@ -40,17 +43,30 @@ def data():
 
     return response
 
-
 @app.route('/steering', methods=["GET", "POST"])
 def steering():
     steeringInput = request.args.get('steeringInput')
     print("steeringInput : "+steeringInput)
+    servos.ResetGpioAtShutdown(False)
+    
+    # servos.setMode(GPIO.BCM) # refer to the pins by the "Broadcom SOC channel" number
+    # servos.ResetGpioAtShutdown(False) # do not reset GPIO at last servo shutdown
+    s1 = servos.servo(23)
+    s1.setAngleAndWait(steeringInput, 0.5) # move to position of 180 degrees
+    s1.shutdown();
+    GPIO.cleanup()
+   
     return steeringInput
 
 @app.route('/throttle', methods=["GET", "POST"])
 def throttle():
+    GPIO.setup(18, GPIO.OUT)
+   
+
     throttleInput = request.args.get('throttleInput')
     print("throttleInput : "+throttleInput)
+    p=GPIO.PWM(18,50)
+    p.ChangeDutyCycle(int(throttleInput))
     return throttleInput
 
 if __name__ == "__main__":
