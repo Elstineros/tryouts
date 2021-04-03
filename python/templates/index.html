@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html  lang="en" dir="ltr">
+<head>
+    <meta charset="utf-8">
+
+    <title>Flask App </title>
+
+    <!-- Bootstraps Java Scipts Links -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+
+
+
+    <!-- JQuery links  -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+
+    <!--High CHART LIVE  -->
+    <script src="http://code.highcharts.com/highcharts.js"></script>
+    <script src="http://code.highcharts.com/highcharts-more.js"></script>
+    <script src="http://code.highcharts.com/modules/exporting.js"></script>
+
+    <style>
+        .slider{
+            display: flex;
+            padding: 20px;
+        }
+        .slider input{
+            flex: 1;
+        }
+        .slider > span{
+            width: 20px;
+            text-align: center;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div class="slider">
+        <input class="block" type="range" min="-35" max="35" value="0" name="steering" id="steering" />
+        <span class="steering">0</span>
+    </div>
+    <div class="slider">
+        <input type="range" min="-35" max="35" value="0" name="throttle" id="throttle" />
+        <span class="throttle">0</span>
+    </div>
+    <div class="container-fluid">
+        
+        <!-- Example row of columns -->
+        <div class="row">
+            <div class="col-sm-4">
+                <div class="container-fluid" id="data-AccX"></div>
+            </div>
+            <div class="col-sm-4">
+                <div class="container-fluid" id="data-AccY"></div>
+            </div>
+            <div class="col-sm-4">
+                <div class="container-fluid" id="data-AccZ"></div>
+            </div>
+
+            <div class="col-sm-4">
+                <div class="container-fluid" id="data-GyroX"></div>
+            </div>
+            <div class="col-sm-4">
+                <div class="container-fluid" id="data-GyroY"></div>
+            </div>
+            <div class="col-sm-4">
+                <div class="container-fluid" id="data-GyroZ"></div>
+            </div>
+        </div>
+    </div>
+<br>
+    <div class="container-fluid">
+        <!-- Example row of columns -->
+        <div class="row">
+            <div class="container-fluid" id="data-humidity">
+                
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        var chartAccX;
+        var chartAccY;
+        var chartAccZ;
+        var chartGyroX;
+        var chartGyroY;
+        var chartGyroZ;
+
+        var steering = document.getElementById("steering");
+        var throttle = document.getElementById("throttle");
+
+        steering.oninput = function() {
+            var input = this.value;
+            $('.steering').text(input)
+
+            $.getJSON('/steering', {
+                steeringInput:input
+            });
+            console.log("success", input);
+        }
+
+        throttle.oninput = function() {
+            var input = this.value;
+            $('.throttle').text(input)
+
+            $.getJSON('/throttle', {
+                throttleInput:input
+            });
+            console.log("success", input);
+        }
+
+        function requestData()
+        {
+            // Ajax call to get the Data from Flask
+            var requests = $.get('/data');
+
+            var tm = requests.done(function (result)
+            {
+                console.log("result", result);
+                // Accelerometer
+                var seriesAccX = chartAccX.series[0],
+                    shiftAccX = seriesAccX.data.length > 20;
+
+                var seriesAccY = chartAccY.series[0],
+                    shiftAccY = seriesAccY.data.length > 20;
+
+                var seriesAccZ = chartAccZ.series[0],
+                    shiftAccZ = seriesAccZ.data.length > 20;
+
+                // Gyroscope
+                var seriesGyroX = chartGyroX.series[0],
+                    shiftGyroX = seriesGyroX.data.length > 20;
+                
+                var seriesGyroY = chartGyroY.series[0],
+                    shiftGyroY = seriesGyroY.data.length > 20;
+
+                var seriesGyroZ = chartGyroZ.series[0],
+                    shiftGyroZ = seriesGyroZ.data.length > 20;
+
+                // Add the Point
+                // Accelerometer
+                var AccX = [];
+                AccX.push(result[0]);
+                AccX.push(result[1]);
+
+                var AccY = [];
+                AccY.push(result[0]);
+                AccY.push(result[2]);
+
+                var AccZ = [];
+                AccZ.push(result[0]);
+                AccZ.push(result[3]);
+
+                var GyroX = [];
+                GyroX.push(result[0]);
+                GyroX.push(result[4]);
+
+                var GyroY = [];
+                GyroY.push(result[0]);
+                GyroY.push(result[5]);
+
+                var GyroZ = [];
+                GyroZ.push(result[0]);
+                GyroZ.push(result[6]);
+
+
+                chartAccX.series[0].addPoint(AccX, true, shiftAccX);
+                chartAccY.series[0].addPoint(AccY, true, shiftAccY);
+                chartAccZ.series[0].addPoint(AccZ, true, shiftAccZ);
+                chartGyroX.series[0].addPoint(GyroX, true, shiftGyroX);
+                chartGyroY.series[0].addPoint(GyroY, true, shiftGyroY);
+                chartGyroZ.series[0].addPoint(GyroZ, true, shiftGyroZ);
+
+
+                // call it again after one second
+                setTimeout(requestData, 2000);
+
+            });
+        }
+
+        $(document).ready(function()
+        {
+            chartAccX = new Highcharts.Chart({
+                chart:
+                    {
+                    renderTo: 'data-AccX',
+                    defaultSeriesType: 'area',
+                    events: {
+                        load: requestData
+                            }
+                    },
+                title:
+                    {
+                    text: 'Acceleration X'
+                    },
+                xAxis: {
+                    type: 'datetime',
+                    tickPixelInterval: 150,
+                    maxZoom: 20 * 1000
+                        },
+                yAxis: {
+                    minPadding: 0.2,
+                    maxPadding: 0.2,
+                    title: {
+                        text: 'Value',
+                        margin: 80
+                            }
+                         },
+                series: [{
+                    lineColor: '#1d82b8',
+                    name: 'Acceleration X',
+                    data: []
+                }]
+            });
+
+            chartAccY = new Highcharts.Chart({
+                chart:
+                    {
+                        renderTo: 'data-AccY',
+                        defaultSeriesType: 'area',
+                        events: {
+                            load: requestData
+                        }
+                    },
+                title:
+                    {
+                        text: 'Acceleration Y'
+                    },
+                xAxis: {
+                    type: 'datetime',
+                    tickPixelInterval: 150,
+                    maxZoom: 20 * 1000
+                },
+                yAxis: {
+                    minPadding: 0.2,
+                    maxPadding: 0.2,
+                    title: {
+                        text: 'Value',
+                        margin: 80
+                    }
+                },
+                series: [{
+                    lineColor: '#1d82b8',
+                    name: 'Acceleration Y',
+                    data: []
+                }]
+            });
+
+            chartAccZ = new Highcharts.Chart({
+                chart:
+                    {
+                        renderTo: 'data-AccZ',
+                        defaultSeriesType: 'area',
+                        events: {
+                            load: requestData
+                        }
+                    },
+                title:
+                    {
+                        text: 'Acceleration Z'
+                    },
+                xAxis: {
+                    type: 'datetime',
+                    tickPixelInterval: 150,
+                    maxZoom: 20 * 1000
+                },
+                yAxis: {
+                    minPadding: 0.2,
+                    maxPadding: 0.2,
+                    title: {
+                        text: 'Value',
+                        margin: 80
+                    }
+                },
+                series: [{
+                    lineColor: '#1d82b8',
+                    name: 'Acceleration Z',
+                    data: []
+                }]
+            });
+
+
+
+            chartGyroX = new Highcharts.Chart({
+                chart:
+                    {
+                    renderTo: 'data-GyroX',
+                    defaultSeriesType: 'area',
+                    events: {
+                        load: requestData
+                            }
+                    },
+                title:
+                    {
+                    text: 'Gyro X'
+                    },
+                xAxis: {
+                    type: 'datetime',
+                    tickPixelInterval: 150,
+                    maxZoom: 20 * 1000
+                        },
+                yAxis: {
+                    minPadding: 0.2,
+                    maxPadding: 0.2,
+                    title: {
+                        text: 'Value',
+                        margin: 80
+                            }
+                         },
+                series: [{
+                    color : '#c23d23',
+                    lineColor: '#303030',
+                    name: 'Gyro X',
+                    data: []
+                }]
+            });
+            chartGyroY = new Highcharts.Chart({
+                chart:
+                    {
+                    renderTo: 'data-GyroY',
+                    defaultSeriesType: 'area',
+                    events: {
+                        load: requestData
+                            }
+                    },
+                title:
+                    {
+                    text: 'Gyro Y'
+                    },
+                xAxis: {
+                    type: 'datetime',
+                    tickPixelInterval: 150,
+                    maxZoom: 20 * 1000
+                        },
+                yAxis: {
+                    minPadding: 0.2,
+                    maxPadding: 0.2,
+                    title: {
+                        text: 'Value',
+                        margin: 80
+                            }
+                         },
+                series: [{
+                    color : '#c23d23',
+                    lineColor: '#303030',
+                    name: 'Gyro Y',
+                    data: []
+                }]
+            });
+            chartGyroZ = new Highcharts.Chart({
+                chart:
+                    {
+                    renderTo: 'data-GyroZ',
+                    defaultSeriesType: 'area',
+                    events: {
+                        load: requestData
+                            }
+                    },
+                title:
+                    {
+                    text: 'Gyro Z'
+                    },
+                xAxis: {
+                    type: 'datetime',
+                    tickPixelInterval: 150,
+                    maxZoom: 20 * 1000
+                        },
+                yAxis: {
+                    minPadding: 0.2,
+                    maxPadding: 0.2,
+                    title: {
+                        text: 'Value',
+                        margin: 80
+                            }
+                         },
+                series: [{
+                    color : '#c23d23',
+                    lineColor: '#303030',
+                    name: 'Gyro Z',
+                    data: []
+                }]
+            });
+
+
+        });
+    </script>
+</body>
+
+
+</html>
+
+
+<!-- to run flask
+flask run --host 192.168.43.154 -->
